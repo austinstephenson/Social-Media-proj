@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 
-from schemas import UserModel, UserLogin, UserOut
+from schemas import UserModel, UserLogin, UserOut, UserCreate
 from security import hash_password, verify_password
 from jwt import create_access_token
 from config import settings
@@ -24,7 +24,7 @@ router = APIRouter()
 security = HTTPBearer()
 
 
-client = AsyncMongoClient(os.environ["MONGODB_URL"])
+client = AsyncMongoClient(settings.mongodb_url)
 db = client.SocialMedia
 user_collection = db.get_collection("Users")
 
@@ -37,7 +37,9 @@ user_collection = db.get_collection("Users")
     status_code=status.HTTP_201_CREATED,
     response_model_by_alias=False,
 )
-async def create_user(user: UserModel = Body(...)):
+
+#Changed from UserModel to UserCreate because model uses hashed/encryption may exceed character limit
+async def create_user(user: UserCreate = Body(...)):
     """
     Insert a new user record.
 
@@ -120,6 +122,9 @@ async def update_user(id: str, user: UpdateUserModel = Body(...)):
     user = {
         k: v for k, v in user.model_dump(by_alias=True).items() if v is not None
     }
+
+    if "password" in user:
+        user["password"] = hash_password(user["password"])
 
     if len(user) >= 1:
         update_result = await user_collection.find_one_and_update(
