@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from typing_extensions import Annotated
 
 
-import routes_auth
+import Endpoints.routes_auth
 
 #CREDITS:
 #https://www.mongodb.com/docs/languages/python/pymongo-driver/current/integrations/fastapi-integration/
@@ -18,4 +18,4 @@ app = FastAPI(
     title="Login and Account Creation API",
     summary="A sample application showing how to use FastAPI to add a ReST API to a MongoDB collection.",
 )
-app.include_router(routes_auth.router, prefix="/auth", tags=["auth"])
+app.include_router(Endpoints.routes_auth.router, prefix="/auth", tags=["auth"])

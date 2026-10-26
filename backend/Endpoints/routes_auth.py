@@ -7,24 +7,24 @@ from bson import ObjectId
 from pymongo import AsyncMongoClient
 from pymongo import ReturnDocument
 
-from security import hash_password, verify_password
-from schemas import UserModel, UpdateUserModel, UserCollection
+from Security.validate_password import hash_password, verify_password
+from AppSettings.schemas import UserModel, UpdateUserModel, UserCollection, UserLogin, UserOut
 
 
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 
-from schemas import UserModel, UserLogin, UserOut
-from security import hash_password, verify_password
-from jwt import create_access_token
-from config import settings
+from Security.jwt import create_access_token
+from AppSettings.config import settings
+from dotenv import load_dotenv
 
+load_dotenv()  # Load environment variables from .env file
 router = APIRouter()
 security = HTTPBearer()
 
 
-client = AsyncMongoClient(os.environ["MONGODB_URL"])
+client = AsyncMongoClient(os.getenv("MONGODB_URL"))
 db = client.SocialMedia
 user_collection = db.get_collection("Users")
 
@@ -137,18 +137,6 @@ async def update_user(id: str, user: UpdateUserModel = Body(...)):
         return existing_user
 
     raise HTTPException(status_code=404, detail=f"User {id} not found")
-
-@router.post(
-    "/login/",
-    response_description="Login user",
-)
-async def login(user: UserLogin):
-    db_user = await user_collection.find_one({"email": user.email})
-    if not db_user or not verify_password(user.password, db_user["password"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    token = create_access_token({"sub": db_user["email"], "id": str(db_user["_id"])})
-    return {"access_token": token, "token_type": "bearer"}
-
 
 @router.get("/me")
 async def read_users_me(credentials: HTTPAuthorizationCredentials = Depends(security)):
