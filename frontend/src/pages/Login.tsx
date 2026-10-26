@@ -1,33 +1,45 @@
 import { useState, type SubmitEvent } from "react";
+import { useNavigate } from "react-router-dom";
 
+const API = "http://localhost:8000";
 function Login() {
-  const [username, setUsername] = useState("");
+
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    // FIXME : Prolly recommended to get rid of these later for security.
-    console.log("Username:", username);
-    console.log("Password:", password);
-
-    // TODO : Add limitations to the username/password input (e.g. character limit should be X or no spaces)
-
-    // TODO : Add backend connection here.
+    setError("")
+    const res = await fetch(`${API}/auth/login/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        });
+    if (!res.ok) {
+        setError("Invalid email or password");
+        return;
+    }
+    const { access_token } = await res.json();
+    localStorage.setItem("token", access_token);
+    navigate("/");
   }
+
+
 
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>Login</h1>
 
-        <label htmlFor="username">Username</label>
+        <label htmlFor="email">Email</label>
         <input
-          id="username"
-          type="text"
-          placeholder="Enter your username"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
+          id="email"
+          type="email"
+          placeholder="Enter your email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
           required
         />
 
@@ -36,10 +48,12 @@ function Login() {
           id="password"
           type="password"
           placeholder="Enter your password"
+          maxLength={72}
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
+        {error && <p style={{ color: "red" }}>{error}</p>}
 
         <button type="submit">Login</button>
       </form>

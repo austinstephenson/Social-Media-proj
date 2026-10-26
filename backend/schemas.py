@@ -34,6 +34,11 @@ class UserModel(BaseModel):
             }
         },
     )
+class UserCreate(BaseModel):
+     user_name: str = Field(..., min_length=3, max_length=30)
+     email: EmailStr
+     password: str = Field(..., min_length=8, max_length=72)
+#This creates character limits to username and passwords
 
 
 class UserLogin(BaseModel):
@@ -79,7 +84,7 @@ class UpdateUserModel(BaseModel):
 
     user_name: Optional[str] = None
     email: Optional[EmailStr] = None
-    password: Optional[str] = None
+    password: Optional[str] = Field(None, min_length=8, max_length=72)
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         json_encoders={ObjectId: str},

@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 
 from typing_extensions import Annotated
-
+from fastapi.middleware.cors import CORSMiddleware
 
 import routes_auth
 
@@ -19,3 +19,11 @@ app = FastAPI(
     summary="A sample application showing how to use FastAPI to add a ReST API to a MongoDB collection.",
 )
 app.include_router(routes_auth.router, prefix="/auth", tags=["auth"])
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
