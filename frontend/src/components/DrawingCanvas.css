@@ -13,14 +13,16 @@
   border: 2px solid #222;
   border-radius: 8px;
   cursor: crosshair;
-  touch-action: none; /* lets a finger draw instead of scrolling the page */
+  touch-action: none;
 }
 
 .drawing-toolbar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 16px;
+  width: 100%;
 }
 
 .drawing-group {
@@ -29,9 +31,7 @@
   gap: 8px;
 }
 
-/* These override the app's global dark `button` style. */
-.drawing-swatch,
-.drawing-size {
+.drawing-swatch {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -40,34 +40,32 @@
   padding: 0;
   border-radius: 50%;
   border: 3px solid transparent;
+  cursor: pointer;
 }
 
 .drawing-swatch:hover {
   filter: brightness(1.1);
 }
 
-.drawing-swatch[aria-pressed="true"],
-.drawing-size[aria-pressed="true"] {
+.drawing-swatch[aria-pressed="true"] {
   border-color: #888;
   box-shadow: 0 0 0 2px #fff inset;
 }
 
-.drawing-size {
-  background: #fff;
-  border: 3px solid #ddd;
+.drawing-brush-control {
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 180px;
+  gap: 4px;
+  font-size: 0.9rem;
 }
 
-.drawing-size:hover {
-  background: #eee;
+.drawing-brush-slider {
+  width: 100%;
+  cursor: pointer;
 }
 
-.drawing-size[aria-pressed="true"] {
-  border-color: #222;
-  box-shadow: none;
-}
-
-.drawing-size span {
-  display: block;
-  background: #222;
-  border-radius: 50%;
+.drawing-toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }

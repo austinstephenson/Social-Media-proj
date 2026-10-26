@@ -3,7 +3,22 @@ import { DrawingCanvas, type DrawingCanvasHandle } from "../components/DrawingCa
 
 function DrawTest() {
   const canvasRef = useRef<DrawingCanvasHandle>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [jsonPreview, setJsonPreview] = useState<string | null>(null);
+  const [pngPreview, setPngPreview] = useState<string | null>(null);
+
+  function exportJSON() {
+    setJsonPreview(canvasRef.current?.toJSON() ?? null);
+  }
+
+  function exportPNG() {
+    setPngPreview(canvasRef.current?.toDataURL() ?? null);
+  }
+
+  function clearCanvas() {
+    canvasRef.current?.clear();
+    setJsonPreview(null);
+    setPngPreview(null);
+  }
 
   return (
     <div className="page">
@@ -11,18 +26,28 @@ function DrawTest() {
       <DrawingCanvas ref={canvasRef} />
 
       <div className="button-row">
-        <button onClick={() => setPreview(canvasRef.current?.toDataURL() ?? null)}>
-          Export PNG
-        </button>
-        <button onClick={() => { canvasRef.current?.clear(); setPreview(null); }}>
-          Clear
-        </button>
+        <button onClick={exportJSON}>Export JSON</button>
+        <button onClick={exportPNG}>Export PNG</button>
+        <button onClick={clearCanvas}>Clear</button>
       </div>
 
-      {preview && (
+      {jsonPreview && (
         <>
-          <p className="muted">Exported image:</p>
-          <img src={preview} alt="Exported drawing" style={{ border: "1px solid #ccc", maxWidth: "100%" }} />
+          <p className="muted">Editable drawing data (JSON):</p>
+          <pre style={{ maxWidth: "100%", overflowX: "auto", whiteSpace: "pre-wrap" }}>
+            {JSON.stringify(JSON.parse(jsonPreview), null, 2)}
+          </pre>
+        </>
+      )}
+
+      {pngPreview && (
+        <>
+          <p className="muted">PNG preview:</p>
+          <img
+            src={pngPreview}
+            alt="Exported drawing"
+            style={{ border: "1px solid #ccc", maxWidth: "100%" }}
+          />
         </>
       )}
     </div>
