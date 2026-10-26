@@ -9,7 +9,7 @@
 
     * JWT_SECRET: This can be any string of your choosing
 
-- run with the command: uvicorn: app:app --reload
+- run by changing directories to /Backend and inputting the following into the terminal: __uvicorn app:app --reload__
     * after server startup, go to http://127.0.0.1:8000/docs
 
 The backend contains the following files:
