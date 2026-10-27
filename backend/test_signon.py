@@ -182,7 +182,7 @@ class TestLogin:
     def test_login_invalid_email_format_rejected(self, client):
         assert login(client, email="not-an-email").status_code == 422
 
-    @pytest.mark.parametrize("missing", ["user_name", "email", "password"])
+    @pytest.mark.parametrize("missing",  ["email", "password"])
     def test_login_missing_field_rejected(self, client, missing):
         payload = {k: v for k, v in VALID_USER.items() if k != missing}
         assert client.post("/auth/login/", json=payload).status_code == 422

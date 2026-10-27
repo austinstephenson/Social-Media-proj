@@ -1,0 +1,71 @@
+.drawing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.drawing-canvas {
+  max-width: 100%;
+  height: auto;
+  background: #fff;
+  border: 2px solid #222;
+  border-radius: 8px;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.drawing-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.drawing-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawing-swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+}
+
+.drawing-swatch:hover {
+  filter: brightness(1.1);
+}
+
+.drawing-swatch[aria-pressed="true"] {
+  border-color: #888;
+  box-shadow: 0 0 0 2px #fff inset;
+}
+
+.drawing-brush-control {
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 180px;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.drawing-brush-slider {
+  width: 100%;
+  cursor: pointer;
+}
+
+.drawing-toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}

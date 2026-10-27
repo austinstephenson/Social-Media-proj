@@ -48,7 +48,7 @@ class UserLogin(BaseModel):
     # The primary key for the UserModel, stored as a `str` on the instance.
     # This will be aliased to ``_id`` when sent to MongoDB,
     # but provided as ``id`` in the API requests and responses.
-    user_name: str = Field(...)
+
     email: EmailStr = Field(...)
     password: str = Field(...)
     model_config = ConfigDict(

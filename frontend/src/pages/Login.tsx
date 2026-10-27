@@ -1,5 +1,6 @@
 import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import "./Register.css"
 
 const API = "http://localhost:8000";
 function Login() {
@@ -23,14 +24,14 @@ function Login() {
     }
     const { access_token } = await res.json();
     localStorage.setItem("token", access_token);
-    navigate("/");
+    navigate("/workspace");
   }
 
 
 
   return (
-    <div className="login-page">
-      <form className="login-card" onSubmit={handleSubmit}>
+    <div className="register-page">
+      <form className="register-card register-form" onSubmit={handleSubmit}>
         <h1>Login</h1>
 
         <label htmlFor="email">Email</label>
@@ -56,6 +57,11 @@ function Login() {
         {error && <p style={{ color: "red" }}>{error}</p>}
 
         <button type="submit">Login</button>
+
+        <button style={{ marginTop: "16px" }}
+        onClick={() => navigate("/register")}>
+        Register
+      </button>
       </form>
     </div>
   );
