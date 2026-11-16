@@ -2,6 +2,7 @@
 import { useState } from "react";
 import "./Register.css";
 import { Link, useNavigate } from "react-router-dom";
+import { API } from "../api";
 
 function Register() {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ function Register() {
 
   try {
     const response = await fetch(
-      "http://localhost:8000/auth/register/",
+      `${API}/auth/register/`,
       {
         method: "POST",
         headers: {

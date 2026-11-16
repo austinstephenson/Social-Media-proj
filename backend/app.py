@@ -6,6 +6,8 @@ from typing_extensions import Annotated
 from fastapi.middleware.cors import CORSMiddleware
 
 import routes_auth
+import routes_messaging
+from config import settings
 
 #CREDITS:
 #https://www.mongodb.com/docs/languages/python/pymongo-driver/current/integrations/fastapi-integration/
@@ -19,11 +21,12 @@ app = FastAPI(
     summary="A sample application showing how to use FastAPI to add a ReST API to a MongoDB collection.",
 )
 app.include_router(routes_auth.router, prefix="/auth", tags=["auth"])
+app.include_router(routes_messaging.router, prefix="/messaging", tags=["messaging"])
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=settings.allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

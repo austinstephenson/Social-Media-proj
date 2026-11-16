@@ -1,5 +1,5 @@
-import ProtectedRoute from "./components/ProtectedRoute";
+import { Navigate, Outlet } from "react-router-dom";
 
-<Route element={<ProtectedRoute />}>
-  <Route path="/workspace" element={<DesktopWorkspace />} />
-</Route>
+export default function ProtectedRoute() {
+  return localStorage.getItem("token") ? <Outlet /> : <Navigate to="/login" replace />;
+}

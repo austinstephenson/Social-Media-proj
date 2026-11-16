@@ -1,8 +1,8 @@
 import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Register.css"
+import { API } from "../api";
 
-const API = "http://localhost:8000";
 function Login() {
 
   const navigate = useNavigate();
@@ -13,6 +13,7 @@ function Login() {
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("")
+    try {
     const res = await fetch(`${API}/auth/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -25,6 +26,9 @@ function Login() {
     const { access_token } = await res.json();
     localStorage.setItem("token", access_token);
     navigate("/workspace");
+    } catch {
+      setError("Could not reach the server. Please try again.");
+    }
   }
 
 
@@ -58,7 +62,7 @@ function Login() {
 
         <button type="submit">Login</button>
 
-        <button style={{ marginTop: "16px" }}
+        <button type="button" style={{ marginTop: "16px" }}
         onClick={() => navigate("/register")}>
         Register
       </button>

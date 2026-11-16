@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import DrawTest from "./pages/DrawTest";
 import DesktopWorkspace from "./pages/DesktopWorkspace";
 import Register from "./pages/Register";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -13,7 +14,9 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/draw" element={<DrawTest />} />
-        <Route path="/workspace" element={<DesktopWorkspace />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/workspace" element={<DesktopWorkspace />} />
+        </Route>
         <Route path="/register" element={<Register />} />
       </Routes>
     </BrowserRouter>
