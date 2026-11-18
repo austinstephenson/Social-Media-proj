@@ -11,6 +11,8 @@ class Settings(BaseSettings):
         default=[{"urls": "stun:stun.l.google.com:19302"}], alias="WEBRTC_ICE_SERVERS"
     )
 
+    enable_docs: bool = Field(default=True, alias="ENABLE_DOCS")
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 settings = Settings()
