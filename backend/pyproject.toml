@@ -10,9 +10,13 @@ dependencies = [
     "passlib>=1.7.4",
     "pydantic-settings>=2.16.1",
     "pydantic[email]>=2.13.5",
-    "pymongo==4.9",
+    "pymongo>=4.15.1,<5",
     "pytest>=9.1.1",
     "python-jose>=3.5.0",
     "typing-extensions>=4.16.0",
     "uvicorn>=0.53.0",
+    "websockets>=13",
 ]
+
+[dependency-groups]
+dev = ["httpx>=0.28"]

@@ -1,9 +1,10 @@
 fastapi
 uvicorn
+websockets>=13
 pydantic[email]
 pydantic-settings
 typing-extensions
-pymongo>=4.9
+pymongo>=4.15.1,<5
 python-jose
 passlib
 bcrypt==4.0.1

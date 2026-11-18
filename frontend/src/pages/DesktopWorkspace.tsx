@@ -1,213 +1,154 @@
-
-import { useState } from "react";
-import {DrawingCanvas} from "../components/DrawingCanvas";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { DrawingCanvas, type DrawingCanvasHandle } from "../components/DrawingCanvas";
+import { DrawingPreview } from "../components/DrawingPreview";
+import { MessagingClient, initialState } from "../messaging/client";
 import "./DesktopWorkspace.css";
 
-type Message = {
-  id: number;
-  sender: string;
-  text?: string;
-  drawing?: boolean;
-  time: string;
+const connectionLabels = {
+  inviting: "Waiting for them to accept…", incoming: "Would like to draw with you",
+  connecting: "Connecting…", connected: "Connected · Ready to share drawings",
 };
 
-const contacts = ["Kayla", "Will", "Alex", "Jordan"];
-
 function DesktopWorkspace() {
-  const [recipient, setRecipient] = useState("Kayla");
-  const [showContacts, setShowContacts] = useState(false);
-  const [messageText, setMessageText] = useState("");
-  const [attachDrawing, setAttachDrawing] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, sender: "Will", text: "Hi!", time: "09:29" },
-    { id: 2, sender: "Kayla", drawing: true, text: "What's up?", time: "09:32" },
-  ]);
+  const navigate = useNavigate();
+  const canvas = useRef<DrawingCanvasHandle>(null);
+  const client = useRef<MessagingClient | null>(null);
+  const endOfMessages = useRef<HTMLDivElement>(null);
+  const [state, setState] = useState(initialState);
+  const [caption, setCaption] = useState("");
+  const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
+  const [hasDrawing, setHasDrawing] = useState(false);
+  const conversation = state.conversation;
+  const recipient = conversation?.peer ?? state.selectedPeer;
+  const messages = state.messages.filter(message => message.peerId === recipient?.id);
+  const connected = conversation?.status === "connected";
 
-  function sendMessage() {
-    if (!messageText.trim() && !attachDrawing) return;
+  useEffect(() => {
+    const messaging = new MessagingClient(setState);
+    client.current = messaging;
+    messaging.connect(localStorage.getItem("token") ?? "");
+    return () => { messaging.dispose(); client.current = null; };
+  }, []);
 
-    const newMessage: Message = {
-      id: Date.now(),
-      sender: "You",
-      text: messageText.trim() || undefined,
-      drawing: attachDrawing,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
+  useEffect(() => {
+    endOfMessages.current?.scrollIntoView({ block: "nearest" });
+  }, [state.messages, recipient?.id]);
 
-    setMessages((current) => [...current, newMessage]);
-    setMessageText("");
-    setAttachDrawing(false);
+  function run(action: () => void) {
+    setError("");
+    try { action(); } catch (cause) { setError(cause instanceof Error ? cause.message : "Please try again."); }
   }
 
-  function changeRecipient(name: string) {
-    setRecipient(name);
-    setShowContacts(false);
-    setMessageText("");
-    setAttachDrawing(false);
+  async function sendDrawing() {
+    if (!canvas.current || !client.current || sending) return;
+    setError("");
+    setSending(true);
+    try {
+      await client.current.send({ id: crypto.randomUUID(), sentAt: Date.now(),
+        caption: caption.trim(), drawing: JSON.parse(canvas.current.toJSON()) });
+      canvas.current?.clear();
+      setCaption("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not send your drawing.");
+    } finally { setSending(false); }
+  }
+
+  function signOut() {
+    client.current?.dispose();
+    localStorage.removeItem("token");
+    navigate("/login", { replace: true });
   }
 
   return (
-    <div className="desktop-workspace">
-      {/* LEFT: Drawing page */}
-      <section className="drawing-page">
-        <header className="page-header">
-          <h1>Sketchat</h1>
-          <span>Draw something to share!</span>
+    <main className="desktop-workspace">
+      <section className="drawing-page" aria-label="Drawing composer">
+        <header className="page-header workspace-heading">
+          <div><h1>Sketchat</h1><span>A little drawing goes a long way.</span></div>
+          <button className="quiet-button" onClick={signOut}>Sign out</button>
         </header>
 
-        <div className="drawing-message-bar">
-          <button onClick={() => setShowContacts(!showContacts)}>
-            Contacts
-          </button>
-
-          <input
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            placeholder="Message..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter") sendMessage();
-            }}
-          />
-
-          <button
-            className={attachDrawing ? "attachment selected" : "attachment"}
-            title="Attach drawing"
-            onClick={() => setAttachDrawing(!attachDrawing)}
-          >
-            ✎
-          </button>
-
-          <button className="send-button" onClick={sendMessage}>
-            Send
-          </button>
+        <div className="presence-heading">
+          <strong>{state.self ? `Hello, ${state.self.name}` : "Your drawing room"}</strong>
+          <span className={`presence-status ${state.status}`} role="status">{state.status}</span>
         </div>
-
-        {showContacts && (
-          <div className="contact-menu">
-            <strong>Start a conversation</strong>
-            {contacts.map((name) => (
-              <button key={name} onClick={() => changeRecipient(name)}>
-                {name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <div className="drawing-area">
-          <DrawingCanvas width={650} height={550} />
-        </div>
-
-        {attachDrawing && (
-          <p className="attachment-hint">
-            Drawing selected. Press Send to include it in your message.
-          </p>
-        )}
-      </section>
-
-      {/* RIGHT: Personal DM page */}
-      <section className="dm-page">
-        {recipient ? (
-          <>
-            <header className="dm-header">
-              <div>
-                <h2>{recipient}</h2>
-                <span>Direct messages</span>
-              </div>
-
-              <div className="dm-header-buttons">
-                <button
-                  onClick={() => setShowContacts(!showContacts)}
-                  title="Change recipient"
-                >
-                  Change
-                </button>
-
-                <button
-                  onClick={() => setRecipient("")}
-                  title="Close conversation"
-                >
-                  ✕
-                </button>
-              </div>
-            </header>
-
-            <div className="message-list">
-              <p className="connection-notice">
-                You connected with {recipient}!
-              </p>
-
-              {messages.map((message) => (
-                <article
-                  key={message.id}
-                  className={
-                    message.sender === "You"
-                      ? "message outgoing"
-                      : "message incoming"
-                  }
-                >
-                  <div className="message-info">
-                    <strong>{message.sender}</strong>
-                    <span>{message.time}</span>
-                  </div>
-
-                  {message.drawing && (
-                    <div className="drawing-message">
-                      <span>✎</span>
-                      <p>Drawing attached</p>
-                    </div>
-                  )}
-
-                  {message.text && (
-                    <div className="text-message">{message.text}</div>
-                  )}
-                </article>
-              ))}
-            </div>
-
-            <form
-              className="dm-composer"
-              onSubmit={(e) => {
-                e.preventDefault();
-                sendMessage();
-              }}
-            >
-              <input
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                placeholder={`Message ${recipient}...`}
-              />
-
-              <button
-                type="button"
-                className={attachDrawing ? "attachment selected" : "attachment"}
-                onClick={() => setAttachDrawing(!attachDrawing)}
-                title="Attach drawing"
-              >
-                ✎
-              </button>
-
-              <button type="submit" className="send-button">
-                Send
-              </button>
-            </form>
-          </>
-        ) : (
-          <div className="closed-conversation">
-            <h2>No conversation selected</h2>
-            <p>Choose someone to start drawing and chatting.</p>
-            <button
-              className="send-button"
-              onClick={() => setShowContacts(true)}
-            >
-              Choose contact
+        <p className="workspace-help">Choose someone online and invite them to connect.</p>
+        <div className="online-contacts" aria-label="Online people">
+          {state.users.length === 0 && <p>{state.status === "online" ? "No one else is here yet. Ask a friend to open Sketchat." : "Waiting for the messaging server…"}</p>}
+          {state.users.map(user => (
+            <button key={user.id} className="contact-button" disabled={!!conversation || user.busy || state.status !== "online" || sending}
+              onClick={() => run(() => client.current?.invite(user.id))}>
+              <span>{user.name} <small>#{user.id.slice(-6)}</small></span>
+              <small>{user.busy ? "In a conversation" : "Invite to draw"}</small>
             </button>
-          </div>
+          ))}
+        </div>
+
+        {(error || state.notice) && <p className="workspace-notice" role="alert">{error || state.notice}</p>}
+        {state.status === "offline" && (
+          <button className="quiet-button reconnect-button" onClick={() => {
+            if (state.authExpired) signOut();
+            else run(() => client.current?.reconnect(localStorage.getItem("token") ?? ""));
+          }}>{state.authExpired ? "Sign in again" : "Reconnect messaging"}</button>
         )}
+
+        <fieldset className="drawing-composer" disabled={sending}>
+          <legend>Draw your message</legend>
+          <div className="drawing-area" inert={sending}>
+            <DrawingCanvas ref={canvas} width={650} height={450} onChange={setHasDrawing} />
+          </div>
+          <form className="dm-composer" onSubmit={event => { event.preventDefault(); void sendDrawing(); }}>
+            <label className="caption-label" htmlFor="drawing-caption">Add a caption (optional)
+              <input id="drawing-caption" value={caption} maxLength={2000}
+                onChange={event => setCaption(event.target.value)} placeholder="A few words for your sketch…" />
+            </label>
+            <button type="submit" className="send-button" disabled={!connected || !hasDrawing || sending}>
+              {sending ? "Sending…" : "Send drawing"}
+            </button>
+          </form>
+        </fieldset>
+        <p className="workspace-help">{connected ? `Your drawing will be sent to ${conversation.peer.name}.` : "You can draw now. Connect with someone to send it."}</p>
       </section>
-    </div>
+
+      <section className="dm-page" aria-label="Conversation">
+        <header className="dm-header">
+          <div><h2>{recipient?.name ?? "Draw together"}</h2>
+            <span role="status">{conversation ? connectionLabels[conversation.status] : "Start a conversation with someone online"}</span></div>
+          {conversation && <button className="quiet-button" onClick={() => run(() => {
+            client.current?.leave();
+          })}>{conversation.status === "inviting" ? "Cancel invitation" : "Disconnect"}</button>}
+        </header>
+
+        {conversation?.status === "incoming" && <div className="invitation-card" role="region" aria-label="Incoming invitation">
+          <p><strong>{conversation.peer.name}</strong> wants to exchange drawings with you.</p>
+          <button className="send-button" onClick={() => run(() => client.current?.respond(true))}>Accept invitation</button>
+          <button className="quiet-button" onClick={() => run(() => {
+            client.current?.respond(false);
+          })}>Decline</button>
+        </div>}
+
+        <div className="message-list" role="log" aria-label="Drawing messages" aria-live="polite">
+          {!messages.length && <div className="empty-messages">
+            <span aria-hidden="true">✎</span><h3>Say it with a sketch</h3>
+            <p>Your drawings and captions will appear here.</p>
+          </div>}
+          {messages.map(message => (
+            <article key={message.id} className={`message ${message.outgoing ? "outgoing" : "incoming"}`}>
+              <div className="message-info"><strong>{message.outgoing ? "You" : recipient?.name}</strong>
+                <time dateTime={new Date(message.sentAt).toISOString()}>{new Date(message.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time></div>
+              <DrawingPreview drawing={message.drawing} />
+              {message.caption && <div className="text-message">{message.caption}</div>}
+              {message.outgoing && <small className={`delivery-status ${message.delivery}`}>
+                {message.delivery === "delivered" ? "Delivered" : message.delivery === "sending" ? "Sending…" : "Delivery unconfirmed"}
+              </small>}
+            </article>
+          ))}
+          <div ref={endOfMessages} />
+        </div>
+        <p className="connection-notice">Drawings travel over an encrypted peer connection. Both people must stay online. Only the latest 100 messages are kept in this tab; refreshing clears them.</p>
+      </section>
+    </main>
   );
 }
 

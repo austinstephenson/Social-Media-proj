@@ -1,5 +1,7 @@
 import {
   useEffect,
+  useCallback,
+  useId,
   useImperativeHandle,
   useRef,
   useState,
@@ -53,9 +55,11 @@ type Props = {
   width?: number;
   height?: number;
   ref?: Ref<DrawingCanvasHandle>;
+  onChange?: (hasDrawing: boolean) => void;
 };
 
-export function DrawingCanvas({ width = 400, height = 300, ref }: Props) {
+export function DrawingCanvas({ width = 400, height = 300, ref, onChange }: Props) {
+  const brushId = useId();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentStroke = useRef<DrawingStroke | null>(null);
   const [color, setColor] = useState(COLORS[0].value);
@@ -63,7 +67,7 @@ export function DrawingCanvas({ width = 400, height = 300, ref }: Props) {
   const [strokes, setStrokes] = useState<DrawingStroke[]>([]);
   const [redoStrokes, setRedoStrokes] = useState<DrawingStroke[]>([]);
 
-  function renderDrawing(strokesToDraw: DrawingStroke[]) {
+  const renderDrawing = useCallback((strokesToDraw: DrawingStroke[]) => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
@@ -102,22 +106,23 @@ export function DrawingCanvas({ width = 400, height = 300, ref }: Props) {
       }
       ctx.stroke();
     }
-  }
+  }, [width, height]);
 
   useEffect(() => {
     renderDrawing(strokes);
-  }, [strokes, width, height]);
+    onChange?.(strokes.length > 0);
+  }, [strokes, renderDrawing, onChange]);
 
   function pointFrom(e: PointerEvent<HTMLCanvasElement>): DrawingPoint {
     const rect = e.currentTarget.getBoundingClientRect();
     return {
-      x: ((e.clientX - rect.left) / rect.width) * width,
-      y: ((e.clientY - rect.top) / rect.height) * height,
+      x: Math.max(0, Math.min(width, ((e.clientX - rect.left) / rect.width) * width)),
+      y: Math.max(0, Math.min(height, ((e.clientY - rect.top) / rect.height) * height)),
     };
   }
 
   function handlePointerDown(e: PointerEvent<HTMLCanvasElement>) {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || !e.isPrimary || currentStroke.current) return;
     e.currentTarget.setPointerCapture(e.pointerId);
 
     const point = pointFrom(e);
@@ -140,7 +145,7 @@ export function DrawingCanvas({ width = 400, height = 300, ref }: Props) {
 
   function handlePointerMove(e: PointerEvent<HTMLCanvasElement>) {
     const stroke = currentStroke.current;
-    if (!stroke) return;
+    if (!stroke || !e.isPrimary) return;
 
     const point = pointFrom(e);
     const previousPoint = stroke.points[stroke.points.length - 1];
@@ -170,21 +175,15 @@ export function DrawingCanvas({ width = 400, height = 300, ref }: Props) {
   }
 
   function undo() {
-    setStrokes((oldStrokes) => {
-      if (oldStrokes.length === 0) return oldStrokes;
-      const lastStroke = oldStrokes[oldStrokes.length - 1];
-      setRedoStrokes((oldRedo) => [...oldRedo, lastStroke]);
-      return oldStrokes.slice(0, -1);
-    });
+    if (!strokes.length) return;
+    setRedoStrokes([...redoStrokes, strokes[strokes.length - 1]]);
+    setStrokes(strokes.slice(0, -1));
   }
 
   function redo() {
-    setRedoStrokes((oldRedo) => {
-      if (oldRedo.length === 0) return oldRedo;
-      const lastUndoneStroke = oldRedo[oldRedo.length - 1];
-      setStrokes((oldStrokes) => [...oldStrokes, lastUndoneStroke]);
-      return oldRedo.slice(0, -1);
-    });
+    if (!redoStrokes.length) return;
+    setStrokes([...strokes, redoStrokes[redoStrokes.length - 1]]);
+    setRedoStrokes(redoStrokes.slice(0, -1));
   }
 
   function clear() {
@@ -221,6 +220,7 @@ export function DrawingCanvas({ width = 400, height = 300, ref }: Props) {
       <canvas
         ref={canvasRef}
         className="drawing-canvas"
+        aria-label="Draw your message here"
         width={width}
         height={height}
         onPointerDown={handlePointerDown}
@@ -246,11 +246,11 @@ export function DrawingCanvas({ width = 400, height = 300, ref }: Props) {
         </div>
 
         <div className="drawing-group drawing-brush-control">
-          <label htmlFor="drawing-brush-size">
+          <label htmlFor={brushId}>
             Brush size: {size}px
           </label>
           <input
-            id="drawing-brush-size"
+            id={brushId}
             className="drawing-brush-slider"
             type="range"
             min="1"
