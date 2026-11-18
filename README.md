@@ -1,6 +1,6 @@
 # Social-Media-proj
 ^^^
-## Will's guide on how to run the connected front/back environment
+## Will's guide on how to run the connected front/back environment locally
 
 ## Backend setup
 ```bash
